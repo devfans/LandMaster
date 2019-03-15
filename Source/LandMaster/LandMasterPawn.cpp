@@ -80,9 +80,12 @@ ALandMasterPawn::ALandMasterPawn(const FObjectInitializer& ObjectInitializer)
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	
-	bReplicates = true;
-	bReplicateMovement = true;
+	// bReplicates = true;
+	// bReplicateMovement = true;
 	// bReplicateInstigator = true;
+	SetReplicates(true);
+	SetReplicateMovement(true);
+
 
 }
 
@@ -97,18 +100,18 @@ void ALandMasterPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALandMasterPawn, LastMoveDirection);
 }
 
-bool ALandMasterPawn::UpdateBulletsBar_Validate() { return true; }
-void ALandMasterPawn::UpdateBulletsBar_Implementation()
+bool ALandMasterPawn::UpdateBulletsBar_Validate(uint32 currentValue) { return true; }
+void ALandMasterPawn::UpdateBulletsBar_Implementation(uint32 currentValue)
 {
 	if (BulletsBar != nullptr)
-		BulletsBar->SetPercent((float)CurrentBullets / (float)MaxBullets);
+		BulletsBar->SetPercent((float)currentValue / (float)MaxBullets);
 }
 
-bool ALandMasterPawn::UpdateHPBar_Validate() { return true;  }
-void ALandMasterPawn::UpdateHPBar_Implementation()
+bool ALandMasterPawn::UpdateHPBar_Validate(uint32 currentValue) { return true;  }
+void ALandMasterPawn::UpdateHPBar_Implementation(uint32 currentValue)
 {
 	if (HPBar != nullptr)
-		HPBar->SetPercent((float)CurrentHP / (float)MaxHP);
+		HPBar->SetPercent((float)currentValue/ (float)MaxHP);
 }
 
 void ALandMasterPawn::PostInitializeComponents()
@@ -120,8 +123,8 @@ void ALandMasterPawn::PostInitializeComponents()
 	{
 		HPBar = Cast<UProgressBar>(CurrentWidget->GetWidgetFromName(TEXT("HPProgressBar")));
 		BulletsBar = Cast<UProgressBar>(CurrentWidget->GetWidgetFromName(TEXT("BulletsProgressBar")));
-		UpdateHPBar();
-		UpdateBulletsBar();
+		UpdateHPBar(CurrentHP);
+		UpdateBulletsBar(CurrentBullets);
 	}
 	else
 		UE_LOG(LogTemp, Warning, TEXT("HP Widget object was not found!"));
@@ -213,7 +216,7 @@ void ALandMasterPawn::FireShot_Implementation(FVector FireDirection)
 				if (CurrentBullets > 0)
 				{
 					CurrentBullets--;
-					UpdateBulletsBar();
+					UpdateBulletsBar(CurrentBullets);
 				}
 			}
 
@@ -252,10 +255,6 @@ void ALandMasterPawn::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor
 {
 	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL))
 	{
-		if (CurrentHP > 0) {
-			CurrentHP--;
-			UpdateHPBar();
-		}
 	}
 	UE_LOG(LogTemp, Warning, TEXT("Ship was damaged by %s"), *OtherActor->GetName());
 }
@@ -265,10 +264,7 @@ void ALandMasterPawn::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 
 	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL))
 	{
-		if (CurrentHP > 0) {
-			CurrentHP--;
-			UpdateHPBar();
-		}
+		
 	}
 	UE_LOG(LogTemp, Warning, TEXT("Ship was damaged by %s"), *OtherActor->GetName());
 
@@ -276,17 +272,18 @@ void ALandMasterPawn::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 
 float ALandMasterPawn::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if (Role == ROLE_Authority)
+		CommitDamagePrivate(8);
 
 	UE_LOG(LogTemp, Warning, TEXT("Ship was damaged by %s"), *DamageCauser->GetName());
 	return 0.0f;
 }
 
-bool ALandMasterPawn::CommitDamagePrivate_Validate(uint32 damage) { return true; }
-void ALandMasterPawn::CommitDamagePrivate_Implementation(uint32 damage)
+void ALandMasterPawn::CommitDamagePrivate(uint32 damage)
 {
-	if (CurrentHP > 8) {
-		CurrentHP -= 8;
-		UpdateHPBar();
+	if (CurrentHP > damage) {
+		CurrentHP -= damage;
+		UpdateHPBar(CurrentHP);
 	}
 	
 }

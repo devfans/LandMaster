@@ -92,9 +92,9 @@ public:
 	class UProgressBar* BulletsBar;
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
-	void UpdateBulletsBar();
+	void UpdateBulletsBar(uint32 currentValue);
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
-	void UpdateHPBar();
+	void UpdateHPBar(uint32 currentValue);
 
 	UFUNCTION()
 		void OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -103,7 +103,6 @@ public:
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
-	UFUNCTION(Server, Reliable, WithValidation)
 	void CommitDamagePrivate(uint32 damage);
 
 
