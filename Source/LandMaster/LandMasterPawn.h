@@ -61,7 +61,7 @@ public:
 	// End Actor Interface
 
 	/* Fire a shot in the specified direction */
-	UFUNCTION(Reliable, NetMulticast, WithValidation)
+	UFUNCTION(Reliable, Server, WithValidation)
 	void FireShot(FVector FireDirection);
 
 	/* Handler for the fire timer expiry */
@@ -103,27 +103,31 @@ public:
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	UFUNCTION(Server, Reliable, WithValidation)
+	void CommitDamagePrivate(uint32 damage);
+
 
 private:
 
 	/* Flag to control firing  */
 	
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, EditAnywhere, Category = Player)
 	uint32 bCanFire : 1;
 	
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, EditAnywhere, Category = Player)
 	uint32 bCanFireCache : 1;
 
+	UPROPERTY(Replicated, EditAnywhere, Category = Player)
 	FVector LastMoveDirection;
 
 	/** Handle for efficient management of ShotTimerExpired timer */
 	FTimerHandle TimerHandle_ShotTimerExpired;
 
 	/* Player State */
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, EditAnywhere, Category = Player)
 	uint8 CurrentHP;
 
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, EditAnywhere, Category = Player)
 	uint8 CurrentBullets;
 
 	const uint8 MaxHP = 100;

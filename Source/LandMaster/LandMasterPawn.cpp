@@ -77,11 +77,13 @@ ALandMasterPawn::ALandMasterPawn(const FObjectInitializer& ObjectInitializer)
 	UClass* Widget = LoadClass<UUserWidget>(NULL, TEXT("WidgetBlueprint'/Game/Interface/HP.HP_C'"));
 	WidgetComponent->SetWidgetClass(Widget);
 	WidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
 	
 	bReplicates = true;
 	bReplicateMovement = true;
+	// bReplicateInstigator = true;
 
-	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 }
 
 void ALandMasterPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -92,6 +94,7 @@ void ALandMasterPawn::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(ALandMasterPawn, CurrentBullets);
 	DOREPLIFETIME(ALandMasterPawn, bCanFire);
 	DOREPLIFETIME(ALandMasterPawn, bCanFireCache);
+	DOREPLIFETIME(ALandMasterPawn, LastMoveDirection);
 }
 
 bool ALandMasterPawn::UpdateBulletsBar_Validate() { return true; }
@@ -273,14 +276,17 @@ void ALandMasterPawn::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 
 float ALandMasterPawn::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (CurrentHP > 8) {
-		CurrentHP-=8;
-		UpdateHPBar();
-	}
-	else {
-		Destroy();
-	}
+
 	UE_LOG(LogTemp, Warning, TEXT("Ship was damaged by %s"), *DamageCauser->GetName());
 	return 0.0f;
 }
 
+bool ALandMasterPawn::CommitDamagePrivate_Validate(uint32 damage) { return true; }
+void ALandMasterPawn::CommitDamagePrivate_Implementation(uint32 damage)
+{
+	if (CurrentHP > 8) {
+		CurrentHP -= 8;
+		UpdateHPBar();
+	}
+	
+}
