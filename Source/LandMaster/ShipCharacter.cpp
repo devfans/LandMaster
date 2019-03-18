@@ -18,6 +18,7 @@
 #include "Sound/SoundBase.h"
 
 
+
 AShipCharacter::AShipCharacter()
 {
 
@@ -25,23 +26,23 @@ AShipCharacter::AShipCharacter()
 	// Create the mesh component
 	ShipMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShipMesh"));
 	ShipMeshComponent->SetSimulatePhysics(false);
-	ShipMeshComponent->SetNotifyRigidBodyCollision(true);
-	ShipMeshComponent->SetCanEverAffectNavigation(false);
+	//ShipMeshComponent->SetNotifyRigidBodyCollision(true);
+	ShipMeshComponent->SetCanEverAffectNavigation(true);
 	ShipMeshComponent->SetGenerateOverlapEvents(false);
 	ShipMeshComponent->OnComponentHit.AddDynamic(this, &AShipCharacter::OnCompHit);
 
 	static FName MeshProfile(TEXT("CharacterMesh"));
 	ShipMeshComponent->SetCollisionProfileName(MeshProfile);
 	// ShipMeshComponent->BodyInstance.SetCollisionProfileName("OverlapOnlyPawn");
-	RootComponent = ShipMeshComponent;
+	// RootComponent = ShipMeshComponent;
+	ShipMeshComponent->SetupAttachment(GetMesh());
 	// ShipMeshComponent->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);
 	// ShipMeshComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
 	ShipMeshComponent->SetStaticMesh(ShipMesh.Object);
+	// ShipMeshComponent->SetMobility(EComponentMobility::Movable);
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->MaxWalkSpeed = 1000.f;
-	GetCharacterMovement()->AirControl = 0.2f;
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
 
 	// Cache our sound effect
 	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("/Game/TwinStick/Audio/TwinStickFire.TwinStickFire"));
@@ -90,39 +91,8 @@ AShipCharacter::AShipCharacter()
 	SetReplicates(true);
 	SetReplicateMovement(true);
 
+	// CameraComponent->bAutoActivate = false;
 
-}
-
-void AShipCharacter::MoveTick(FVector Direction, float Value)
-{
-	LastMoveDirection = Direction;
-	AddMovementInput(Direction, Value);
-	UE_LOG(LogTemp, Warning, TEXT("Moving direction: %s, %d"), *Direction.ToString(), Value);
-}
-
-void AShipCharacter::MoveForward(float Value)
-{
-	UE_LOG(LogTemp, Warning, TEXT("Moving direction forward"));
-	if ((Controller != NULL) && (Value != 0.f))
-	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotaion(0, Rotation.Yaw, 0);
-
-		const FVector Direction = FRotationMatrix(YawRotaion).GetUnitAxis(EAxis::X);
-		MoveTick(Direction, Value);
-	}
-}
-
-void AShipCharacter::MoveRight(float Value)
-{
-	//if ((Controller != NULL) && (Value != 0.f))
-	//{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotaion(0, Rotation.Yaw, 0);
-
-		const FVector Direction = FRotationMatrix(YawRotaion).GetUnitAxis(EAxis::Y);
-		MoveTick(Direction, Value);
-	//}
 }
 
 void AShipCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -175,28 +145,60 @@ void AShipCharacter::CacheFireShootAction() {
 	bCanFireCache = true;
 }
 
+void AShipCharacter::MoveForward(float Value)
+{
+	if (Controller != NULL && Value != 0.f)
+	{
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0.f, Rotation.Yaw, 0);
+
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		AddMovementInput(Direction, Value);
+		SetActorRotation(Direction.Rotation());
+	}
+}
+
+void AShipCharacter::MoveRight(float Value)
+{
+	if (Controller != NULL && Value != 0.f)
+	{
+		const FRotator Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0.f, Rotation.Yaw, 0);
+
+		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		AddMovementInput(Direction, Value);
+
+	}
+}
+
 void AShipCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	check(PlayerInputComponent);
-
-	// set up gameplay key bindings
 	PlayerInputComponent->BindAxis("MoveForward", this, &AShipCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AShipCharacter::MoveRight);
-
 	PlayerInputComponent->BindAction("FireShoot", IE_Pressed, this, &AShipCharacter::CacheFireShootAction);
 }
 
 void AShipCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	FireShot(LastMoveDirection);
+	// Find movement direction
+	// Clamp max size so that (X=1, Y=1) doesn't cause faster movement in diagonal directions
+
+	FireShot(GetActorForwardVector());
 }
 
 bool AShipCharacter::FireShot_Validate(FVector FireDirection) { return true; }
-void AShipCharacter::FireShot_Implementation(FVector FireDirection)
+void AShipCharacter::FireShot_Implementation(FVector FireDirection) 
 {
+	FireShotAction(FireDirection);
+}
+
+void AShipCharacter::FireShotAction(FVector FireDirection)
+{
+	UE_LOG(LogTemp, Warning, TEXT("FireShot, can %b cached %b"), bCanFire, bCanFireCache);
 	// If it's ok to fire again
 	if (bCanFire == true)
 	{

@@ -13,23 +13,23 @@ class LANDMASTER_API AShipCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-		/* The mesh component */
-		UPROPERTY(Category = Mesh, VisibleDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		class UStaticMeshComponent* ShipMeshComponent;
+	/* The mesh component */
+	UPROPERTY(Category = Mesh, VisibleDefaultsOnly, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* ShipMeshComponent;
 
 	/** The camera */
 	UPROPERTY(Category = Camera, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-		class UCameraComponent* CameraComponent;
+	class UCameraComponent* CameraComponent;
 
 	UPROPERTY(Category = Camera, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		class UCameraComponent* FPVCameraComponent;
+	class UCameraComponent* FPVCameraComponent;
 
 	/** Camera boom positioning the camera above the character */
 	UPROPERTY(Category = Camera, VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-		class USpringArmComponent* CameraBoom;
+	class USpringArmComponent* CameraBoom;
 
 	UPROPERTY(EditAnywhere, Category = WidgetComponent)
-		class UWidgetComponent* WidgetComponent;
+	class UWidgetComponent* WidgetComponent;
 
 public:
 	// AShipCharacter();
@@ -63,6 +63,8 @@ public:
 	/* Fire a shot in the specified direction */
 	UFUNCTION(Reliable, Server, WithValidation)
 		void FireShot(FVector FireDirection);
+
+	void FireShotAction(FVector FireDirection);
 
 	/* Handler for the fire timer expiry */
 	void ShotTimerExpired();
@@ -102,7 +104,6 @@ public:
 
 	void CommitDamagePrivate(uint32 damage);
 
-
 private:
 
 	/* Flag to control firing  */
@@ -130,9 +131,8 @@ private:
 	const uint8 MaxBullets = 200;
 
 protected:
-	void MoveForward(float Value);
 	void MoveRight(float Value);
-	void MoveTick(FVector Direction, float Value);
+	void MoveForward(float Value);
 
 public:
 	/** Returns ShipMeshComponent subobject **/

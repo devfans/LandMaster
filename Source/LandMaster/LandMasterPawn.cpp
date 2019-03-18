@@ -81,11 +81,10 @@ ALandMasterPawn::ALandMasterPawn(const FObjectInitializer& ObjectInitializer)
 
 	
 	// bReplicates = true;
-	// bReplicateMovement = true;
+	bReplicateMovement = true;
 	// bReplicateInstigator = true;
 	SetReplicates(true);
 	SetReplicateMovement(true);
-
 
 }
 
@@ -151,7 +150,7 @@ void ALandMasterPawn::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 	PlayerInputComponent->BindAction("FireShoot", IE_Pressed, this, &ALandMasterPawn::CacheFireShootAction);
 }
 
-void ALandMasterPawn::Tick(float DeltaSeconds)
+void ALandMasterPawn::MoveTick(float DeltaSeconds)
 {
 	// Find movement direction
 	const float ForwardValue = GetInputAxisValue(MoveForwardBinding);
@@ -159,7 +158,7 @@ void ALandMasterPawn::Tick(float DeltaSeconds)
 
 	// Clamp max size so that (X=1, Y=1) doesn't cause faster movement in diagonal directions
 	const FVector MoveDirection = FVector(ForwardValue, RightValue, 0.f).GetClampedToMaxSize(1.0f);
-	
+
 
 	// Calculate  movement
 	const FVector Movement = MoveDirection * MoveSpeed * DeltaSeconds;
@@ -171,7 +170,7 @@ void ALandMasterPawn::Tick(float DeltaSeconds)
 		FHitResult Hit(1.f);
 		RootComponent->MoveComponent(Movement, NewRotation, true, &Hit);
 		LastMoveDirection = MoveDirection;
-		
+
 		if (Hit.IsValidBlockingHit())
 		{
 			const FVector Normal2D = Hit.Normal.GetSafeNormal2D();
@@ -179,16 +178,22 @@ void ALandMasterPawn::Tick(float DeltaSeconds)
 			RootComponent->MoveComponent(Deflection, NewRotation, true);
 		}
 	}
+}
+
+void ALandMasterPawn::Tick(float DeltaSeconds)
+{
+	
 	
 	// Create fire direction vector
 	// const float FireForwardValue = GetInputAxisValue(FireForwardBinding);
 	// const float FireRightValue = GetInputAxisValue(FireRightBinding);
 	// const FVector FireDirection = FVector(FireForwardValue, FireRightValue, 0.f);
 
+	MoveTick(DeltaSeconds);
 
 	// Try and fire a shot
 	if (bCanFire == true && bCanFireCache)
-		UE_LOG(LogTemp, Warning, TEXT("Firing shoot action is caching......, direction: %s"), *MoveDirection.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Firing shoot action is caching......, direction: %s"), *LastMoveDirection.ToString());
 	FireShot(LastMoveDirection);
 
 	

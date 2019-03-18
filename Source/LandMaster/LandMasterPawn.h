@@ -8,6 +8,7 @@
 #include "UnrealNetwork.h"
 #include "LandMasterPawn.generated.h"
 
+
 UCLASS(Blueprintable)
 class ALandMasterPawn : public APawn
 {
@@ -104,6 +105,8 @@ public:
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	void CommitDamagePrivate(uint32 damage);
+
+	void MoveTick(float DeltaSeconds);
 
 
 private:

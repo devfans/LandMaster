@@ -1,13 +1,14 @@
 // Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
 
 #include "LandMasterGameMode.h"
+#include "ShipPlayerController.h"
 #include "ShipCharacter.h"
 
 ALandMasterGameMode::ALandMasterGameMode()
 {
 	// set default pawn class to our character class
 	DefaultPawnClass = AShipCharacter::StaticClass();
-
+	PlayerControllerClass = AShipPlayerController::StaticClass();
 }
 
 void ALandMasterGameMode::BeginPlay()
