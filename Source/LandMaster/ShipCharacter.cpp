@@ -26,7 +26,7 @@ AShipCharacter::AShipCharacter()
 	// Create the mesh component
 	ShipMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShipMesh"));
 	ShipMeshComponent->SetSimulatePhysics(false);
-	//ShipMeshComponent->SetNotifyRigidBodyCollision(true);
+	// ShipMeshComponent->SetNotifyRigidBodyCollision(true);
 	ShipMeshComponent->SetCanEverAffectNavigation(true);
 	ShipMeshComponent->SetGenerateOverlapEvents(false);
 	ShipMeshComponent->OnComponentHit.AddDynamic(this, &AShipCharacter::OnCompHit);
@@ -196,6 +196,17 @@ void AShipCharacter::FireShot_Implementation(FVector FireDirection)
 	FireShotAction(FireDirection);
 }
 
+bool AShipCharacter::EmitBullet_Validate(FRotator Rotation, FVector Location) { return true;  }
+void AShipCharacter::EmitBullet_Implementation(FRotator Rotation, FVector Location)
+{
+	UWorld* const World = GetWorld();
+	if (World != NULL && CurrentBullets > 0)
+	{
+		// spawn the projectile
+		World->SpawnActor<ALandMasterProjectile>(Location, Rotation);
+	}
+}
+
 void AShipCharacter::FireShotAction(FVector FireDirection)
 {
 	UE_LOG(LogTemp, Warning, TEXT("FireShot, can %b cached %b"), bCanFire, bCanFireCache);
@@ -215,6 +226,8 @@ void AShipCharacter::FireShotAction(FVector FireDirection)
 			{
 				// spawn the projectile
 				World->SpawnActor<ALandMasterProjectile>(SpawnLocation, FireRotation);
+				// EmitBullet(FireRotation, SpawnLocation);
+				// projectile->SetOwner(this);
 				if (CurrentBullets > 0)
 				{
 					CurrentBullets--;

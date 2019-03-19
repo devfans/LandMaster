@@ -91,7 +91,11 @@ public:
 		class UProgressBar* BulletsBar;
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
+		void EmitBullet(FRotator Rotation, FVector Location);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation)
 		void UpdateBulletsBar(uint32 currentValue);
+
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
 		void UpdateHPBar(uint32 currentValue);
 
