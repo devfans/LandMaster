@@ -90,7 +90,7 @@ public:
 	UPROPERTY()
 		class UProgressBar* BulletsBar;
 
-	UFUNCTION(Reliable, NetMulticast, WithValidation)
+	UFUNCTION(Reliable, Server, WithValidation)
 		void EmitBullet(FRotator Rotation, FVector Location);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
@@ -112,13 +112,13 @@ private:
 
 	/* Flag to control firing  */
 
-	UPROPERTY(Replicated, EditAnywhere, Category = Player)
+	UPROPERTY(EditAnywhere, Category = Player)
 		uint32 bCanFire : 1;
 
-	UPROPERTY(Replicated, EditAnywhere, Category = Player)
+	UPROPERTY(EditAnywhere, Category = Player)
 		uint32 bCanFireCache : 1;
 
-	UPROPERTY(Replicated, EditAnywhere, Category = Player)
+	UPROPERTY(EditAnywhere, Category = Player)
 		FVector LastMoveDirection;
 
 	/** Handle for efficient management of ShotTimerExpired timer */

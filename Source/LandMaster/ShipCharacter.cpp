@@ -72,7 +72,7 @@ AShipCharacter::AShipCharacter()
 	GunOffset = FVector(90.f, 0.f, 0.f);
 	FireRate = 0.3f;
 	bCanFire = true;
-	bCanFireCache = false;
+	bCanFireCache = true;
 
 	CurrentHP = 100;
 	CurrentBullets = 200;
@@ -85,11 +85,10 @@ AShipCharacter::AShipCharacter()
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 
-	// bReplicates = true;
-	// bReplicateMovement = true;
+	bReplicates = true;
+	bReplicateMovement = true;
 	// bReplicateInstigator = true;
-	SetReplicates(true);
-	SetReplicateMovement(true);
+	
 
 	// CameraComponent->bAutoActivate = false;
 
@@ -101,9 +100,7 @@ void AShipCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 	DOREPLIFETIME(AShipCharacter, CurrentHP);
 	DOREPLIFETIME(AShipCharacter, CurrentBullets);
-	DOREPLIFETIME(AShipCharacter, bCanFire);
-	DOREPLIFETIME(AShipCharacter, bCanFireCache);
-	DOREPLIFETIME(AShipCharacter, LastMoveDirection);
+
 }
 
 bool AShipCharacter::UpdateBulletsBar_Validate(uint32 currentValue) { return true; }
@@ -187,7 +184,14 @@ void AShipCharacter::Tick(float DeltaSeconds)
 	// Find movement direction
 	// Clamp max size so that (X=1, Y=1) doesn't cause faster movement in diagonal directions
 
-	FireShot(GetActorForwardVector());
+	// FireShot(GetActorForwardVector());
+	if (bCanFireCache) {
+		const FRotator FireRotation = GetActorForwardVector().Rotation();
+		// Spawn projectile at an offset from this pawn
+		const FVector SpawnLocation = GetActorLocation() + FireRotation.RotateVector(GunOffset);
+		EmitBullet(FireRotation, SpawnLocation);
+		bCanFireCache = false;
+	}
 }
 
 bool AShipCharacter::FireShot_Validate(FVector FireDirection) { return true; }
@@ -204,6 +208,11 @@ void AShipCharacter::EmitBullet_Implementation(FRotator Rotation, FVector Locati
 	{
 		// spawn the projectile
 		World->SpawnActor<ALandMasterProjectile>(Location, Rotation);
+		if (CurrentBullets > 0)
+		{
+			CurrentBullets--;
+			UpdateBulletsBar(CurrentBullets);
+		}
 	}
 }
 
