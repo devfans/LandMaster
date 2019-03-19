@@ -91,6 +91,14 @@ public:
 		class UProgressBar* BulletsBar;
 
 	UFUNCTION(Reliable, Server, WithValidation)
+		void ServerRotateShip(float Value);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation)
+		void NRotateShip(float Value);
+
+	void RotateAction(float Value);
+
+	UFUNCTION(Reliable, Server, WithValidation)
 		void EmitBullet(FRotator Rotation, FVector Location);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
@@ -131,12 +139,16 @@ private:
 	UPROPERTY(Replicated, EditAnywhere, Category = Player)
 		uint8 CurrentBullets;
 
+	UPROPERTY()
+		uint32 bFPVMode : 1;
+
 	const uint8 MaxHP = 100;
 	const uint8 MaxBullets = 200;
 
 protected:
 	void MoveRight(float Value);
 	void MoveForward(float Value);
+	void SwitchView();
 
 public:
 	/** Returns ShipMeshComponent subobject **/

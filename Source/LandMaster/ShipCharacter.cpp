@@ -41,7 +41,7 @@ AShipCharacter::AShipCharacter()
 	ShipMeshComponent->SetStaticMesh(ShipMesh.Object);
 	// ShipMeshComponent->SetMobility(EComponentMobility::Movable);
 
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->bUseControllerDesiredRotation = false;
 
 	// Cache our sound effect
@@ -62,6 +62,11 @@ AShipCharacter::AShipCharacter()
 	CameraComponent->bUsePawnControlRotation = false;	// Camera does not rotate relative to arm
 
 	FPVCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FPVCamera"));
+	FPVCameraComponent->bAbsoluteLocation = false;
+	FPVCameraComponent->bAbsoluteRotation = false;
+	FVector FPVCameraLocation(-600.f, 0.f, 260.f);
+	FPVCameraComponent->SetRelativeLocation(FPVCameraLocation);
+	FPVCameraComponent->RelativeRotation = FRotator(-50.f, 0.f, 0.f);
 	FPVCameraComponent->SetupAttachment(RootComponent);
 	FPVCameraComponent->bUsePawnControlRotation = true;
 
@@ -72,7 +77,7 @@ AShipCharacter::AShipCharacter()
 	GunOffset = FVector(90.f, 0.f, 0.f);
 	FireRate = 0.3f;
 	bCanFire = true;
-	bCanFireCache = true;
+	bCanFireCache = false;
 
 	CurrentHP = 100;
 	CurrentBullets = 200;
@@ -87,10 +92,10 @@ AShipCharacter::AShipCharacter()
 
 	bReplicates = true;
 	bReplicateMovement = true;
+	bFPVMode = true;
 	// bReplicateInstigator = true;
 	
-
-	// CameraComponent->bAutoActivate = false;
+	CameraComponent->bAutoActivate = false;
 
 }
 
@@ -142,6 +147,44 @@ void AShipCharacter::CacheFireShootAction() {
 	bCanFireCache = true;
 }
 
+bool AShipCharacter::ServerRotateShip_Validate(float Value) { return true;  }
+void AShipCharacter::ServerRotateShip_Implementation(float Value)
+{	
+	NRotateShip(Value);
+}
+
+void AShipCharacter::RotateAction(float Value)
+{
+	if (Value != 0.f)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Rotating Ship with delta %f"), Value);
+		//FRotator rot(0.f, 20*Value, 0.f);
+		//AddActorLocalRotation(rot);
+		AddControllerYawInput(Value);
+	}
+}
+
+bool AShipCharacter::NRotateShip_Validate(float Value) { return true; }
+void AShipCharacter::NRotateShip_Implementation(float Value)
+{
+	RotateAction(Value);
+}
+
+void AShipCharacter::SwitchView()
+{
+	bFPVMode = !bFPVMode;
+	if (bFPVMode == true)
+	{
+		FPVCameraComponent->SetActive(true);
+		CameraComponent->SetActive(false);
+	} 
+	else
+	{
+		FPVCameraComponent->SetActive(false);
+		CameraComponent->SetActive(true);
+	}
+}
+
 void AShipCharacter::MoveForward(float Value)
 {
 	if (Controller != NULL && Value != 0.f)
@@ -151,7 +194,9 @@ void AShipCharacter::MoveForward(float Value)
 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		AddMovementInput(Direction, Value);
-		SetActorRotation(Direction.Rotation());
+		// SetActorRotation(Direction.Rotation());
+		// FRotator rot(0.f, 90.f, 0.f);
+		// AddActorLocalRotation(rot);
 	}
 }
 
@@ -175,7 +220,9 @@ void AShipCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	check(PlayerInputComponent);
 	PlayerInputComponent->BindAxis("MoveForward", this, &AShipCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AShipCharacter::MoveRight);
+	PlayerInputComponent->BindAxis("RotateShip", this, &AShipCharacter::RotateAction);
 	PlayerInputComponent->BindAction("FireShoot", IE_Pressed, this, &AShipCharacter::CacheFireShootAction);
+	PlayerInputComponent->BindAction("SwitchView", IE_Pressed, this, &AShipCharacter::SwitchView);
 }
 
 void AShipCharacter::Tick(float DeltaSeconds)
@@ -218,7 +265,7 @@ void AShipCharacter::EmitBullet_Implementation(FRotator Rotation, FVector Locati
 
 void AShipCharacter::FireShotAction(FVector FireDirection)
 {
-	UE_LOG(LogTemp, Warning, TEXT("FireShot, can %b cached %b"), bCanFire, bCanFireCache);
+	// UE_LOG(LogTemp, Warning, TEXT("FireShot, can %b cached %b"), bCanFire, bCanFireCache);
 	// If it's ok to fire again
 	if (bCanFire == true)
 	{
