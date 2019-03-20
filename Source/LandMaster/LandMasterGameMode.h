@@ -21,13 +21,29 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UMG Game")
 	FString ServerAddress;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UMG Game")
+		FString DashInfo;
+
+	/*UPROPERTY()
+		class UTextBlock* DashInfoText;*/
+
+
+	UFUNCTION()
+		void UpdateDashInfoText();
+
 	UFUNCTION(BlueprintCallable, Category = "UMG Game")
 	void SetServerAddress(FString &address);
+
+	UFUNCTION(BlueprintCallable, Category = "UMG Game")
+		void SetDashInfo();
 
 	UFUNCTION(BlueprintCallable, Category = "UMG Game")
 	void ConnectServer() {};
 
 	// virtual bool ReadyToStartMatch_Implementation() override;
+
+	UFUNCTION(BlueprintCallable, Category = WidgetComponent)
+		FString GetDashInfo() { return DashInfo; }
 
 	void SpawnActors();
 
@@ -36,6 +52,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UMG Game")
 	TSubclassOf<UUserWidget> StartingWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UMG Game")
+		TSubclassOf<UUserWidget> InfoWidgetClass;
+
 
 	UPROPERTY()
 	UUserWidget* CurrentWidget;

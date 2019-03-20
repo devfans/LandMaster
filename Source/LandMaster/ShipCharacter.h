@@ -90,6 +90,12 @@ public:
 	UPROPERTY()
 		class UProgressBar* BulletsBar;
 
+	UPROPERTY()
+		class UTextBlock* PlayerNameText;
+
+	UFUNCTION(BlueprintCallable, Category = WidgetComponent)
+		void SetPlayerName(FString InPlayerName);
+
 	UFUNCTION(Reliable, Server, WithValidation)
 		void ServerRotateShip(float Value);
 
@@ -103,6 +109,9 @@ public:
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
 		void UpdateBulletsBar(uint32 currentValue);
+
+	UFUNCTION(Reliable, NetMulticast, WithValidation)
+		void UpdatePlayerName(const FString& InPlayerName);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
 		void UpdateHPBar(uint32 currentValue);
@@ -135,6 +144,9 @@ private:
 	/* Player State */
 	UPROPERTY(Replicated, EditAnywhere, Category = Player)
 		uint8 CurrentHP;
+
+	UPROPERTY(Replicated, EditAnywhere, Category = Player)
+		FString PlayerName;
 
 	UPROPERTY(Replicated, EditAnywhere, Category = Player)
 		uint8 CurrentBullets;

@@ -10,6 +10,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/ProgressBar.h"
+#include "Components/TextBlock.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/CollisionProfile.h"
@@ -81,6 +82,7 @@ AShipCharacter::AShipCharacter()
 
 	CurrentHP = 100;
 	CurrentBullets = 200;
+	PlayerName = "";
 
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("WidgetComponent"));
 	WidgetComponent->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
@@ -92,10 +94,10 @@ AShipCharacter::AShipCharacter()
 
 	bReplicates = true;
 	bReplicateMovement = true;
-	bFPVMode = true;
+	bFPVMode = false;
 	// bReplicateInstigator = true;
 	
-	CameraComponent->bAutoActivate = false;
+	CameraComponent->bAutoActivate = true;
 
 }
 
@@ -105,6 +107,7 @@ void AShipCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 	DOREPLIFETIME(AShipCharacter, CurrentHP);
 	DOREPLIFETIME(AShipCharacter, CurrentBullets);
+	DOREPLIFETIME(AShipCharacter, PlayerName);
 
 }
 
@@ -113,6 +116,17 @@ void AShipCharacter::UpdateBulletsBar_Implementation(uint32 currentValue)
 {
 	if (BulletsBar != nullptr)
 		BulletsBar->SetPercent((float)currentValue / (float)MaxBullets);
+}
+
+bool AShipCharacter::UpdatePlayerName_Validate(const FString& InPlayerName) { return true; }
+void AShipCharacter::UpdatePlayerName_Implementation(const FString& InPlayerName)
+{
+	if (PlayerNameText != nullptr)
+	{
+		FText name = FText::FromString(InPlayerName);
+		PlayerNameText->SetText(name);
+	}
+	
 }
 
 bool AShipCharacter::UpdateHPBar_Validate(uint32 currentValue) { return true; }
@@ -131,8 +145,10 @@ void AShipCharacter::PostInitializeComponents()
 	{
 		HPBar = Cast<UProgressBar>(CurrentWidget->GetWidgetFromName(TEXT("HPProgressBar")));
 		BulletsBar = Cast<UProgressBar>(CurrentWidget->GetWidgetFromName(TEXT("BulletsProgressBar")));
+		PlayerNameText = Cast<UTextBlock>(CurrentWidget->GetWidgetFromName(TEXT("PlayerNameText")));
 		UpdateHPBar(CurrentHP);
 		UpdateBulletsBar(CurrentBullets);
+		UpdatePlayerName(PlayerName);
 	}
 	else
 		UE_LOG(LogTemp, Warning, TEXT("HP Widget object was not found!"));
@@ -319,6 +335,12 @@ void AShipCharacter::SetHP(uint8 hp)
 void AShipCharacter::SetBullets(uint8 bullets)
 {
 	CurrentBullets = bullets;
+}
+
+void AShipCharacter::SetPlayerName(FString InPlayerName)
+{
+	PlayerName = InPlayerName;
+	UpdatePlayerName(InPlayerName);
 }
 
 

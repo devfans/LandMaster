@@ -16,5 +16,7 @@ class LANDMASTER_API ALandMasterPlayerController : public APlayerController
 
 public:
 	virtual void BeginPlay() override;
+
+	void SetShipPlayerName(const FString InPlayerName);
 	
 };

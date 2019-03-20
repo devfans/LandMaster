@@ -1,6 +1,8 @@
 # Visual Studio 2015 user specific files
 .vs/
 
+Releases/
+WindowsNoEditor/*
 # Compiled Object files
 *.slo
 *.lo
