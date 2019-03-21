@@ -18,6 +18,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
 #include "LandMasterPlayerController.h"
+#include "MainGameInstance.h"
 
 
 
@@ -138,6 +139,44 @@ void AShipCharacter::UpdateHPBar_Implementation(uint32 currentValue)
 		HPBar->SetPercent((float)currentValue / (float)MaxHP);
 }
 
+void AShipCharacter::OnRep_SetHP()
+{
+	UpdateHPDisplay();
+}
+
+void AShipCharacter::UpdateHPDisplay()
+{
+	if (HPBar != nullptr)
+		HPBar->SetPercent((float)CurrentHP / (float)MaxHP);
+}
+
+void AShipCharacter::OnRep_SetBullets()
+{
+	UpdateBulletsDisplay();
+}
+
+void AShipCharacter::UpdateBulletsDisplay()
+{
+	if (BulletsBar != nullptr)
+		BulletsBar->SetPercent((float)CurrentBullets / (float)MaxBullets);
+}
+
+void AShipCharacter::OnRep_SetName()
+{
+	UpdateNameDisplay();
+}
+
+void AShipCharacter::UpdateNameDisplay()
+{
+	if (PlayerNameText != nullptr)
+	{
+		FText name = FText::FromString(PlayerName);
+		PlayerNameText->SetText(name);
+	}
+}
+
+
+
 void AShipCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -150,7 +189,14 @@ void AShipCharacter::PostInitializeComponents()
 		PlayerNameText = Cast<UTextBlock>(CurrentWidget->GetWidgetFromName(TEXT("PlayerNameText")));
 		UpdateHPBar(CurrentHP);
 		UpdateBulletsBar(CurrentBullets);
-		// UpdatePlayerName(PlayerName);
+
+		{
+			UMainGameInstance * instance = Cast<UMainGameInstance>(GetGameInstance());
+			UpdatePlayerName(instance->PlayerName);
+		}
+		
+		// SetPlayerName(instance->PlayerName);
+
 	}
 	else
 		UE_LOG(LogTemp, Warning, TEXT("HP Widget object was not found!"));
@@ -273,10 +319,10 @@ void AShipCharacter::EmitBullet_Implementation(FRotator Rotation, FVector Locati
 	{
 		// spawn the projectile
 		World->SpawnActor<ALandMasterProjectile>(Location, Rotation);
-		if (CurrentBullets > 0)
 		{
 			CurrentBullets--;
-			UpdateBulletsBar(CurrentBullets);
+			if (Role == ROLE_Authority)
+				UpdateBulletsDisplay();
 		}
 	}
 }
@@ -339,10 +385,10 @@ void AShipCharacter::SetBullets(uint8 bullets)
 	CurrentBullets = bullets;
 }
 
-void AShipCharacter::SetPlayerName(FString InPlayerName)
+void AShipCharacter::SetPlayerName(const FString& InPlayerName)
 {
-	PlayerName = InPlayerName;
-	UpdatePlayerName(InPlayerName);
+	if (IsLocallyControlled())
+		UpdatePlayerName(InPlayerName);
 }
 
 
@@ -379,18 +425,20 @@ void AShipCharacter::CommitDamagePrivate(uint32 damage)
 	if (CurrentHP > damage) 
 	{
 		CurrentHP -= damage;
-		UpdateHPBar(CurrentHP);
+		if (Role == ROLE_Authority)
+			UpdateHPDisplay();
+		// UpdateHPBar(CurrentHP);
 	}
 	else
 	{
 		CurrentHP = 0;
-		UpdateHPBar(CurrentHP);
+		if (Role == ROLE_Authority)
+			UpdateHPDisplay();
+
+		// UpdateHPBar(CurrentHP);
 		Terminate();
 		Destroy();
 	}
-	
-
-
 }
 
 void AShipCharacter::Terminate_Implementation()

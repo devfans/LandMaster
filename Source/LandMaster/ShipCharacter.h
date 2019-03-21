@@ -94,7 +94,7 @@ public:
 		class UTextBlock* PlayerNameText;
 
 	UFUNCTION(BlueprintCallable, Category = WidgetComponent)
-		void SetPlayerName(FString InPlayerName);
+		void SetPlayerName(const FString& InPlayerName);
 
 	UFUNCTION(Reliable, Server, WithValidation)
 		void ServerRotateShip(float Value);
@@ -115,6 +115,24 @@ public:
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
 		void UpdateHPBar(uint32 currentValue);
+
+	UFUNCTION()
+		void OnRep_SetHP();
+
+	UFUNCTION()
+		void UpdateHPDisplay();
+
+	UFUNCTION()
+		void OnRep_SetBullets();
+
+	UFUNCTION()
+		void UpdateBulletsDisplay();
+
+	UFUNCTION()
+		void OnRep_SetName();
+
+	UFUNCTION()
+		void UpdateNameDisplay();
 
 	UFUNCTION()
 		void OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -145,13 +163,13 @@ private:
 	FTimerHandle TimerHandle_ShotTimerExpired;
 
 	/* Player State */
-	UPROPERTY(Replicated, EditAnywhere, Category = Player)
+	UPROPERTY(Transient, ReplicatedUsing=OnRep_SetHP)
 		uint8 CurrentHP;
 
-	UPROPERTY(Replicated, EditAnywhere, Category = Player)
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_SetName)
 		FString PlayerName;
 
-	UPROPERTY(Replicated, EditAnywhere, Category = Player)
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_SetBullets)
 		uint8 CurrentBullets;
 
 	UPROPERTY()

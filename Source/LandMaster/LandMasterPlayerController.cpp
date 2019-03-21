@@ -14,8 +14,13 @@ void ALandMasterPlayerController::BeginPlay()
 	SetDashInfo();
 }
 
-void ALandMasterPlayerController::SetShipPlayerName(const FString InPlayerName)
+void ALandMasterPlayerController::SetShipPlayerName(const FString& InPlayerName)
 {
+
+	AShipCharacter* ship = Cast<AShipCharacter>(GetPawn());
+	if (ship != nullptr) {
+		ship->UpdatePlayerName(InPlayerName);
+	}
 	
 }
 

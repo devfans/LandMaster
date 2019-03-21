@@ -16,8 +16,8 @@ class LANDMASTER_API ALandMasterPlayerController : public APlayerController
 
 public:
 	virtual void BeginPlay() override;
-
-	void SetShipPlayerName(const FString InPlayerName);
+	UFUNCTION(BlueprintCallable, Category = "UMG Game")
+	void SetShipPlayerName(const FString& InPlayerName);
 	void SetDashInfo();
 
 	UFUNCTION(BlueprintCallable, Category = "UMG Game")
@@ -29,4 +29,5 @@ public:
 protected:
 	UPROPERTY()
 		UUserWidget* CurrentWidget;
+
 };
