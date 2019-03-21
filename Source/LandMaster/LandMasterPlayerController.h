@@ -18,5 +18,15 @@ public:
 	virtual void BeginPlay() override;
 
 	void SetShipPlayerName(const FString InPlayerName);
-	
+	void SetDashInfo();
+
+	UFUNCTION(BlueprintCallable, Category = "UMG Game")
+		void ChangeMenuWidget(TSubclassOf<UUserWidget> NewWidgetClass);
+
+	UFUNCTION(BlueprintCallable, Category = "UMG Game")
+		void Terminate();
+
+protected:
+	UPROPERTY()
+		UUserWidget* CurrentWidget;
 };

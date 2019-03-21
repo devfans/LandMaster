@@ -125,6 +125,9 @@ public:
 
 	void CommitDamagePrivate(uint32 damage);
 
+	UFUNCTION(Reliable, Client)
+		void Terminate();
+
 private:
 
 	/* Flag to control firing  */

@@ -17,6 +17,7 @@
 #include "Engine/StaticMesh.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
+#include "LandMasterPlayerController.h"
 
 
 
@@ -74,6 +75,7 @@ AShipCharacter::AShipCharacter()
 
 	// Movement
 	MoveSpeed = 1000.0f;
+
 	// Weapon
 	GunOffset = FVector(90.f, 0.f, 0.f);
 	FireRate = 0.3f;
@@ -148,7 +150,7 @@ void AShipCharacter::PostInitializeComponents()
 		PlayerNameText = Cast<UTextBlock>(CurrentWidget->GetWidgetFromName(TEXT("PlayerNameText")));
 		UpdateHPBar(CurrentHP);
 		UpdateBulletsBar(CurrentBullets);
-		UpdatePlayerName(PlayerName);
+		// UpdatePlayerName(PlayerName);
 	}
 	else
 		UE_LOG(LogTemp, Warning, TEXT("HP Widget object was not found!"));
@@ -374,10 +376,29 @@ float AShipCharacter::TakeDamage(float Damage, struct FDamageEvent const& Damage
 
 void AShipCharacter::CommitDamagePrivate(uint32 damage)
 {
-	if (CurrentHP > damage) {
+	if (CurrentHP > damage) 
+	{
 		CurrentHP -= damage;
 		UpdateHPBar(CurrentHP);
 	}
+	else
+	{
+		CurrentHP = 0;
+		UpdateHPBar(CurrentHP);
+		Terminate();
+		Destroy();
+	}
+	
 
+
+}
+
+void AShipCharacter::Terminate_Implementation()
+{
+	if (IsLocallyControlled())
+	{
+		ALandMasterPlayerController *controller = Cast<ALandMasterPlayerController>(GetController());
+		controller->Terminate();
+	}
 }
 

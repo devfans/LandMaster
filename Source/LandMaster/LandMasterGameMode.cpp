@@ -11,31 +11,14 @@ ALandMasterGameMode::ALandMasterGameMode()
 	// set default pawn class to our character class
 	DefaultPawnClass = AShipCharacter::StaticClass();
 	PlayerControllerClass = ALandMasterPlayerController::StaticClass();
-
-	DashInfo = "";
 }
 
-
-void ALandMasterGameMode::UpdateDashInfoText()
-{
-	if (nullptr != CurrentWidget)
-	{
-		UTextBlock* DashInfoText = Cast<UTextBlock>(CurrentWidget->GetWidgetFromName(TEXT("PlayModeText")));
-		
-		if (DashInfoText != nullptr)
-		{
-			FText info = FText::FromString(DashInfo);
-			DashInfoText->SetText(info);
-		}
-	}
-}
 
 void ALandMasterGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnActors();
 	ChangeMenuWidget(StartingWidgetClass);
-	SetDashInfo();
 }
 
 void ALandMasterGameMode::SpawnActors()
@@ -66,26 +49,5 @@ void ALandMasterGameMode::SetServerAddress(FString &address)
 	ServerAddress = address;
 }
 
-void ALandMasterGameMode::SetDashInfo()
-{
-	FString mode = "";
-	switch (GetNetMode()) 
-	{
-	case NM_ListenServer:
-		mode = "Host mode:";
-		break;
-	case NM_Client:
-		mode = "Client connected to: ";
-		break;
-	case NM_DedicatedServer:
-		mode = "Dedicated Server:";
-		break;
-
-	}
-	
-	DashInfo = mode + GetWorld()->GetAddressURL();
-	
-	UpdateDashInfoText();
-}
 
 
