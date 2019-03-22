@@ -5,6 +5,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "ShipCharacter.h"
+#include "MainGameInstance.h"
 
 
 void ALandMasterPlayerController::BeginPlay()
@@ -19,9 +20,19 @@ void ALandMasterPlayerController::SetShipPlayerName(const FString& InPlayerName)
 
 	AShipCharacter* ship = Cast<AShipCharacter>(GetPawn());
 	if (ship != nullptr) {
-		ship->UpdatePlayerName(InPlayerName);
-	}
+		ship->ServerSetName(InPlayerName);
+		UE_LOG(LogTemp, Warning, TEXT("Setting new ship name to %s!"), *InPlayerName);
+	} else
+		UE_LOG(LogTemp, Warning, TEXT("Setting new ship name failed for new pawn yet!"));
 	
+}
+
+bool ALandMasterPlayerController::SetPlayerName_Validate() { return true; }
+void ALandMasterPlayerController::SetPlayerName_Implementation() {
+	UMainGameInstance * instance = Cast<UMainGameInstance>(GetGameInstance());
+	UE_LOG(LogTemp, Warning, TEXT("Setting new ship name from instance to %s!"), *instance->PlayerName);
+	
+	SetShipPlayerName(instance->PlayerName);
 }
 
 void ALandMasterPlayerController::SetDashInfo()

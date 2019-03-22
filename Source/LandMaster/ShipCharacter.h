@@ -35,6 +35,8 @@ public:
 	// AShipCharacter();
 	AShipCharacter();
 
+	virtual void BeginPlay() override;
+
 	virtual void PostInitializeComponents() override;
 
 	void CacheFireShootAction();
@@ -103,6 +105,7 @@ public:
 		void NRotateShip(float Value);
 
 	void RotateAction(float Value);
+	void GoUpAction(float Value);
 
 	UFUNCTION(Reliable, Server, WithValidation)
 		void EmitBullet(FRotator Rotation, FVector Location);
@@ -112,6 +115,12 @@ public:
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
 		void UpdatePlayerName(const FString& InPlayerName);
+
+	UFUNCTION(Reliable, Client)
+		void ClientSetName();
+
+	UFUNCTION(Reliable, Server, WithValidation)
+		void ServerSetName(const FString& InName);
 
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
 		void UpdateHPBar(uint32 currentValue);
@@ -177,6 +186,8 @@ private:
 
 	const uint8 MaxHP = 100;
 	const uint8 MaxBullets = 200;
+
+	uint32 bHasName : 1;
 
 protected:
 	void MoveRight(float Value);

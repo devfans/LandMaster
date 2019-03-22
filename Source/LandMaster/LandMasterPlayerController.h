@@ -20,6 +20,9 @@ public:
 	void SetShipPlayerName(const FString& InPlayerName);
 	void SetDashInfo();
 
+	UFUNCTION(Reliable, Client, WithValidation)
+		void SetPlayerName();
+
 	UFUNCTION(BlueprintCallable, Category = "UMG Game")
 		void ChangeMenuWidget(TSubclassOf<UUserWidget> NewWidgetClass);
 

@@ -42,10 +42,15 @@ AShipCharacter::AShipCharacter()
 	// ShipMeshComponent->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);
 	// ShipMeshComponent->SetCollisionProfileName(TEXT("OverlapOnlyPawn"));
 	ShipMeshComponent->SetStaticMesh(ShipMesh.Object);
+	ShipMeshComponent->bAbsoluteLocation = false;
+	ShipMeshComponent->bAbsoluteRotation = false;
 	// ShipMeshComponent->SetMobility(EComponentMobility::Movable);
 
 	GetCharacterMovement()->bOrientRotationToMovement = false;
-	GetCharacterMovement()->bUseControllerDesiredRotation = false;
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	GetCharacterMovement()->DefaultLandMovementMode = EMovementMode::MOVE_Flying;
+	GetCharacterMovement()->AirControl = 0.8f;
+	GetCharacterMovement()->MaxWalkSpeed = 1000.f;
 
 	// Cache our sound effect
 	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("/Game/TwinStick/Audio/TwinStickFire.TwinStickFire"));
@@ -67,11 +72,11 @@ AShipCharacter::AShipCharacter()
 	FPVCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FPVCamera"));
 	FPVCameraComponent->bAbsoluteLocation = false;
 	FPVCameraComponent->bAbsoluteRotation = false;
-	FVector FPVCameraLocation(-600.f, 0.f, 260.f);
+	FVector FPVCameraLocation(-240.f, 0.f, 160.f);
 	FPVCameraComponent->SetRelativeLocation(FPVCameraLocation);
-	FPVCameraComponent->RelativeRotation = FRotator(-50.f, 0.f, 0.f);
+	FPVCameraComponent->RelativeRotation = FRotator(-15.f, 0.f, 0.f);
 	FPVCameraComponent->SetupAttachment(RootComponent);
-	FPVCameraComponent->bUsePawnControlRotation = true;
+	FPVCameraComponent->bUsePawnControlRotation = false;
 
 
 	// Movement
@@ -82,6 +87,7 @@ AShipCharacter::AShipCharacter()
 	FireRate = 0.3f;
 	bCanFire = true;
 	bCanFireCache = false;
+	bHasName = false;
 
 	CurrentHP = 100;
 	CurrentBullets = 200;
@@ -99,8 +105,10 @@ AShipCharacter::AShipCharacter()
 	bReplicateMovement = true;
 	bFPVMode = false;
 	// bReplicateInstigator = true;
+
+	bUseControllerRotationPitch = true;	
 	
-	CameraComponent->bAutoActivate = true;
+	CameraComponent->bAutoActivate = false;
 
 }
 
@@ -175,7 +183,29 @@ void AShipCharacter::UpdateNameDisplay()
 	}
 }
 
+void AShipCharacter::ClientSetName_Implementation()
+{
+	UMainGameInstance * instance = Cast<UMainGameInstance>(GetGameInstance());
+	ServerSetName(instance->PlayerName);
+}
 
+bool AShipCharacter::ServerSetName_Validate(const FString& InName) { return true; }
+void AShipCharacter::ServerSetName_Implementation(const FString& InName)
+{
+	bHasName = true;
+	PlayerName = InName;
+	UE_LOG(LogTemp, Warning, TEXT("Setting ship name to %s!"), *InName);
+	if (Role == ROLE_Authority)
+		UpdateNameDisplay();
+}
+
+
+void AShipCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	if (bHasName == false)
+		ClientSetName();
+}
 
 void AShipCharacter::PostInitializeComponents()
 {
@@ -189,13 +219,10 @@ void AShipCharacter::PostInitializeComponents()
 		PlayerNameText = Cast<UTextBlock>(CurrentWidget->GetWidgetFromName(TEXT("PlayerNameText")));
 		UpdateHPBar(CurrentHP);
 		UpdateBulletsBar(CurrentBullets);
-
-		{
-			UMainGameInstance * instance = Cast<UMainGameInstance>(GetGameInstance());
-			UpdatePlayerName(instance->PlayerName);
-		}
-		
+		// UpdatePlayerName(PlayerName);
+		// ClientSetName();	
 		// SetPlayerName(instance->PlayerName);
+		
 
 	}
 	else
@@ -221,10 +248,21 @@ void AShipCharacter::RotateAction(float Value)
 {
 	if (Value != 0.f)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Rotating Ship with delta %f"), Value);
+		// UE_LOG(LogTemp, Warning, TEXT("Rotating Ship with delta %f"), Value);
 		//FRotator rot(0.f, 20*Value, 0.f);
 		//AddActorLocalRotation(rot);
 		AddControllerYawInput(Value);
+	}
+}
+
+void AShipCharacter::GoUpAction(float Value)
+{
+	if (Value != 0.f)
+	{
+		// UE_LOG(LogTemp, Warning, TEXT("Rotating Ship with delta %f"), Value);
+		//FRotator rot(0.f, 20*Value, 0.f);
+		//AddActorLocalRotation(rot);
+		AddControllerPitchInput(Value);
 	}
 }
 
@@ -253,11 +291,12 @@ void AShipCharacter::MoveForward(float Value)
 {
 	if (Controller != NULL && Value != 0.f)
 	{
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0.f, Rotation.Yaw, 0);
+		// const FRotator Rotation = Controller->GetControlRotation();
+		// const FRotator YawRotation(0.f, Rotation.Yaw, 0);
 
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, Value);
+		//const FVector Direction = FRotationMatrix(Rotation).GetUnitAxis(EAxis::X);
+		// const FVector dir(0.f, 0.f, 100);
+		AddMovementInput(GetActorForwardVector(), Value, true);
 		// SetActorRotation(Direction.Rotation());
 		// FRotator rot(0.f, 90.f, 0.f);
 		// AddActorLocalRotation(rot);
@@ -285,6 +324,7 @@ void AShipCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAxis("MoveForward", this, &AShipCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AShipCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("RotateShip", this, &AShipCharacter::RotateAction);
+	PlayerInputComponent->BindAxis("GoUp", this, &AShipCharacter::GoUpAction);
 	PlayerInputComponent->BindAction("FireShoot", IE_Pressed, this, &AShipCharacter::CacheFireShootAction);
 	PlayerInputComponent->BindAction("SwitchView", IE_Pressed, this, &AShipCharacter::SwitchView);
 }
@@ -446,7 +486,8 @@ void AShipCharacter::Terminate_Implementation()
 	if (IsLocallyControlled())
 	{
 		ALandMasterPlayerController *controller = Cast<ALandMasterPlayerController>(GetController());
-		controller->Terminate();
+		if (controller != nullptr)
+			controller->Terminate();
 	}
 }
 

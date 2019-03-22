@@ -50,4 +50,13 @@ void ALandMasterGameMode::SetServerAddress(FString &address)
 }
 
 
+void ALandMasterGameMode::PostLogin(APlayerController * NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+	ALandMasterPlayerController* controller = Cast<ALandMasterPlayerController>(NewPlayer);
+	if (controller != nullptr)
+		controller->SetPlayerName();
+}
+
+
 
