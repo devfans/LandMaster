@@ -19,6 +19,7 @@
 #include "Sound/SoundBase.h"
 #include "LandMasterPlayerController.h"
 #include "MainGameInstance.h"
+#include "DrawDebugHelpers.h"
 
 
 
@@ -31,11 +32,12 @@ AShipCharacter::AShipCharacter()
 	ShipMeshComponent->SetSimulatePhysics(false);
 	// ShipMeshComponent->SetNotifyRigidBodyCollision(true);
 	ShipMeshComponent->SetCanEverAffectNavigation(true);
-	ShipMeshComponent->SetGenerateOverlapEvents(false);
+	ShipMeshComponent->SetGenerateOverlapEvents(true);
 	ShipMeshComponent->OnComponentHit.AddDynamic(this, &AShipCharacter::OnCompHit);
 
 	static FName MeshProfile(TEXT("CharacterMesh"));
 	ShipMeshComponent->SetCollisionProfileName(MeshProfile);
+	ShipMeshComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	// ShipMeshComponent->BodyInstance.SetCollisionProfileName("OverlapOnlyPawn");
 	// RootComponent = ShipMeshComponent;
 	ShipMeshComponent->SetupAttachment(GetMesh());
@@ -49,8 +51,8 @@ AShipCharacter::AShipCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 	GetCharacterMovement()->DefaultLandMovementMode = EMovementMode::MOVE_Flying;
-	GetCharacterMovement()->AirControl = 0.8f;
-	GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+	GetCharacterMovement()->AirControl = 0.1f;
+	GetCharacterMovement()->MaxWalkSpeed = 5.f;
 
 	// Cache our sound effect
 	static ConstructorHelpers::FObjectFinder<USoundBase> FireAudio(TEXT("/Game/TwinStick/Audio/TwinStickFire.TwinStickFire"));
@@ -87,6 +89,7 @@ AShipCharacter::AShipCharacter()
 	FireRate = 0.3f;
 	bCanFire = true;
 	bCanFireCache = false;
+	bCanTraceCache = false;
 	bHasName = false;
 
 	CurrentHP = 100;
@@ -234,8 +237,13 @@ void AShipCharacter::PostInitializeComponents()
 }
 
 void AShipCharacter::CacheFireShootAction() {
-	UE_LOG(LogTemp, Warning, TEXT("Firing shoot action is caching!"));
+	// UE_LOG(LogTemp, Warning, TEXT("Firing shoot action is caching!"));
 	bCanFireCache = true;
+}
+
+void AShipCharacter::CacheFireLaserAction() {
+	// UE_LOG(LogTemp, Warning, TEXT("Firing shoot action is caching!"));
+	bCanTraceCache = true;
 }
 
 bool AShipCharacter::ServerRotateShip_Validate(float Value) { return true;  }
@@ -327,6 +335,7 @@ void AShipCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 	PlayerInputComponent->BindAxis("GoUp", this, &AShipCharacter::GoUpAction);
 	PlayerInputComponent->BindAction("FireShoot", IE_Pressed, this, &AShipCharacter::CacheFireShootAction);
 	PlayerInputComponent->BindAction("SwitchView", IE_Pressed, this, &AShipCharacter::SwitchView);
+	PlayerInputComponent->BindAction("FireLaser", IE_Pressed, this, &AShipCharacter::CacheFireLaserAction);
 }
 
 void AShipCharacter::Tick(float DeltaSeconds)
@@ -336,12 +345,27 @@ void AShipCharacter::Tick(float DeltaSeconds)
 	// Clamp max size so that (X=1, Y=1) doesn't cause faster movement in diagonal directions
 
 	// FireShot(GetActorForwardVector());
-	if (bCanFireCache) {
+	if (bCanFireCache || bCanTraceCache) {
 		const FRotator FireRotation = GetActorForwardVector().Rotation();
 		// Spawn projectile at an offset from this pawn
 		const FVector SpawnLocation = GetActorLocation() + FireRotation.RotateVector(GunOffset);
-		EmitBullet(FireRotation, SpawnLocation);
-		bCanFireCache = false;
+		if (bCanFireCache)
+		{
+			EmitBullet(FireRotation, SpawnLocation);
+			bCanFireCache = false;
+		}
+		else 
+		{
+			EmitLaser(SpawnLocation);
+			bCanTraceCache = false;
+		}
+		
+
+		if (FireSound != nullptr)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+		}
+
 	}
 }
 
@@ -363,6 +387,41 @@ void AShipCharacter::EmitBullet_Implementation(FRotator Rotation, FVector Locati
 			CurrentBullets--;
 			if (Role == ROLE_Authority)
 				UpdateBulletsDisplay();
+		}
+	}
+}
+bool AShipCharacter::EmitLaserEffect_Validate(FVector Start, FVector End) { return true; }
+void AShipCharacter::EmitLaserEffect_Implementation(FVector Start, FVector End)
+{
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, true);
+}
+bool AShipCharacter::EmitLaser_Validate(FVector Location) { return true; }
+void AShipCharacter::EmitLaser_Implementation(FVector Location)
+{
+	FVector Direction = GetActorForwardVector();
+	UWorld* const World = GetWorld();
+	
+	FHitResult OutHit;
+	FVector Target = (Direction * 100000.f) + Location;
+	FCollisionQueryParams CollisionParams;
+	// DrawDebugLine(World, Location, Target, FColor::Red, true);
+	AShipCharacter::EmitLaserEffect(Location, Target);
+	if (World->LineTraceSingleByChannel(OutHit, Location, Target, ECC_Visibility, CollisionParams))
+	{
+		if (OutHit.bBlockingHit)
+		{
+			AActor * other = OutHit.GetActor();
+			UPrimitiveComponent* DamagedComponent = OutHit.GetComponent();
+			if (DamagedComponent != nullptr)
+			{
+				// UE_LOG(LogTemp, Warning, TEXT("Laser hitting %s"), *other->GetName());
+				DamagedComponent->AddImpulseAtLocation(GetActorForwardVector()*500000.0f, OutHit.Location);
+			}
+				
+			AShipCharacter * otherShip = Cast<AShipCharacter>(other);
+			FString targetName = otherShip == nullptr ? other->GetName() : otherShip->PlayerName;
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, FString::Printf(TEXT("%s hits %s"), *PlayerName, *targetName));
+			UGameplayStatics::ApplyDamage(OutHit.GetActor(), 20.0f, nullptr, this, UDamageType::StaticClass());
 		}
 	}
 }
@@ -454,7 +513,7 @@ void AShipCharacter::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 float AShipCharacter::TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	if (Role == ROLE_Authority)
-		CommitDamagePrivate(8);
+		CommitDamagePrivate(Damage);
 
 	UE_LOG(LogTemp, Warning, TEXT("Ship was damaged by %s"), *DamageCauser->GetName());
 	return 0.0f;

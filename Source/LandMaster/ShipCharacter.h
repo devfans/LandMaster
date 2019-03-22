@@ -40,6 +40,7 @@ public:
 	virtual void PostInitializeComponents() override;
 
 	void CacheFireShootAction();
+	void CacheFireLaserAction();
 
 	/* Offset from the ships location to spawn projectiles */
 	UPROPERTY(Category = Gameplay, EditAnywhere, BlueprintReadWrite)
@@ -110,6 +111,11 @@ public:
 	UFUNCTION(Reliable, Server, WithValidation)
 		void EmitBullet(FRotator Rotation, FVector Location);
 
+	UFUNCTION(Reliable, Server, WithValidation)
+		void EmitLaser(FVector Location);
+	UFUNCTION(Reliable, NetMulticast, WithValidation)
+		void EmitLaserEffect(FVector Start, FVector End);
+
 	UFUNCTION(Reliable, NetMulticast, WithValidation)
 		void UpdateBulletsBar(uint32 currentValue);
 
@@ -155,6 +161,9 @@ public:
 	UFUNCTION(Reliable, Client)
 		void Terminate();
 
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_SetName)
+		FString PlayerName;
+
 private:
 
 	/* Flag to control firing  */
@@ -166,6 +175,9 @@ private:
 		uint32 bCanFireCache : 1;
 
 	UPROPERTY(EditAnywhere, Category = Player)
+		uint32 bCanTraceCache : 1;
+
+	UPROPERTY(EditAnywhere, Category = Player)
 		FVector LastMoveDirection;
 
 	/** Handle for efficient management of ShotTimerExpired timer */
@@ -174,9 +186,6 @@ private:
 	/* Player State */
 	UPROPERTY(Transient, ReplicatedUsing=OnRep_SetHP)
 		uint8 CurrentHP;
-
-	UPROPERTY(Transient, ReplicatedUsing = OnRep_SetName)
-		FString PlayerName;
 
 	UPROPERTY(Transient, ReplicatedUsing = OnRep_SetBullets)
 		uint8 CurrentBullets;

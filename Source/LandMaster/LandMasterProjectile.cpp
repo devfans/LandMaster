@@ -42,7 +42,7 @@ void ALandMasterProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherAct
 	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL))
 	{
 		OtherComp->AddImpulseAtLocation(GetVelocity() * 20.0f, GetActorLocation());
-		UGameplayStatics::ApplyDamage(OtherActor, 10.0f, nullptr, this, UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(OtherActor, 5.0f, nullptr, this, UDamageType::StaticClass());
 		// static ConstructorHelpers::FObjectFinder<UParticleSystem> BulletHitPSAsset(TEXT("ParticleSystem'/Game/Effects/P_AssaultRifle_IH.P_AssaultRifle_IH'"));
 		// UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BulletHitPSAsset.Object, GetActorLocation());
 	}
