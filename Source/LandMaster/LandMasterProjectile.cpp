@@ -29,6 +29,8 @@ ALandMasterProjectile::ALandMasterProjectile()
 	ProjectileMovement->bShouldBounce = false;
 	ProjectileMovement->ProjectileGravityScale = 0.f; // No gravity
 
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> BulletShotTemplate(TEXT("ParticleSystem'/Game/InfinityBladeEffects/Effects/FX_Monsters/FX_Monster_Gruntling/Notifies/P_Death_backpack_expl.P_Death_backpack_expl'"));
+	BulletShot = BulletShotTemplate.Object;
 
 	// Die after 3 seconds by default
 	InitialLifeSpan = 3.0f;
@@ -45,6 +47,7 @@ void ALandMasterProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherAct
 		UGameplayStatics::ApplyDamage(OtherActor, 5.0f, nullptr, this, UDamageType::StaticClass());
 		// static ConstructorHelpers::FObjectFinder<UParticleSystem> BulletHitPSAsset(TEXT("ParticleSystem'/Game/Effects/P_AssaultRifle_IH.P_AssaultRifle_IH'"));
 		// UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BulletHitPSAsset.Object, GetActorLocation());
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BulletShot, Hit.Location);
 	}
 
 	Destroy();

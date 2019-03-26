@@ -34,6 +34,9 @@ class LANDMASTER_API AShipCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, Category = WidgetComponent)
 		class UParticleSystemComponent* LaserEmitter;
 
+	UPROPERTY(EditAnywhere, Category = WidgetComponent)
+		class UParticleSystemComponent* LaserEyeEmitter;
+
 public:
 	// AShipCharacter();
 	AShipCharacter();
@@ -170,6 +173,9 @@ public:
 	UPROPERTY(Transient, ReplicatedUsing = OnRep_SetName)
 		FString PlayerName;
 
+	UParticleSystem* BeamShot;
+
+
 private:
 
 	/* Flag to control firing  */
@@ -185,6 +191,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Player)
 		FVector LastMoveDirection;
+
 
 	/** Handle for efficient management of ShotTimerExpired timer */
 	FTimerHandle TimerHandle_ShotTimerExpired;

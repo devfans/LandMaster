@@ -48,7 +48,7 @@ AShipCharacter::AShipCharacter()
 	ShipMeshComponent->bAbsoluteRotation = false;
 	// ShipMeshComponent->SetMobility(EComponentMobility::Movable);
 
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> Beam(TEXT("ParticleSystem'/Game/InfinityBladeEffects/Effects/FX_Monsters/FX_Monster_Elemental/Fire/P_Beam_Laser_Fire_Large.P_Beam_Laser_Fire_Large'"));
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> Beam(TEXT("ParticleSystem'/Game/InfinityBladeEffects/Effects/FX_Monsters/FX_Monster_Elemental/ICE/P_Beam_Laser_Ice_Large.P_Beam_Laser_Ice_Large'"));
 	// UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Beam.Object, GetActorLocation()); 
 	LaserEmitter = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("LaserBeamEmitter"));
 	LaserEmitter->SetTemplate(Beam.Object);
@@ -56,6 +56,14 @@ AShipCharacter::AShipCharacter()
 	// LaserEmitter->SetBeamSourcePoint(0, GetActorLocation(), 0);
 	// LaserEmitter->SetBeamTargetPoint(0, GetActorLocation(), 0);
 	LaserEmitter->SetVisibility(false);
+
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> BeamEye(TEXT("ParticleSystem'/Game/InfinityBladeEffects/Effects/FX_Monsters/FX_Monster_Elemental/ICE/P_Beam_Laser_Ice_Large1.P_Beam_Laser_Ice_Large1'"));
+	// UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Beam.Object, GetActorLocation()); 
+	LaserEyeEmitter = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("LaserBeamEyeEmitter"));
+	LaserEyeEmitter->SetTemplate(BeamEye.Object);
+	LaserEyeEmitter->SetupAttachment(GetMesh());
+	
+	LaserEyeEmitter->SetVisibility(false);
 
 
 	GetCharacterMovement()->bOrientRotationToMovement = false;
@@ -90,6 +98,8 @@ AShipCharacter::AShipCharacter()
 	FPVCameraComponent->SetupAttachment(RootComponent);
 	FPVCameraComponent->bUsePawnControlRotation = false;
 
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> BeamShotTemplate(TEXT("ParticleSystem'/Game/InfinityBladeEffects/Effects/FX_Mobile/ICE/combat/P_ProjectileLob_Explo_Ice_02.P_ProjectileLob_Explo_Ice_02'"));
+	BeamShot = BeamShotTemplate.Object;
 
 	// Movement
 	MoveSpeed = 1000.0f;
@@ -351,6 +361,7 @@ void AShipCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInpu
 void AShipCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	LaserEyeEmitter->SetBeamSourcePoint(0, GetActorLocation(), 0);
 	LaserEmitter->SetBeamSourcePoint(0, GetActorLocation(), 0);
 
 	// Find movement direction
@@ -379,6 +390,25 @@ void AShipCharacter::Tick(float DeltaSeconds)
 		}
 
 	}
+	//FVector Direction = GetActorForwardVector();
+	//UWorld* const World = GetWorld();
+
+	//FHitResult OutHit;
+	//FVector Target = (Direction * 100000000.f) + GetActorLocation();
+	//FVector End = Target;
+	//FCollisionQueryParams CollisionParams;
+	//// DrawDebugLine(World, Location, Target, FColor::Red, true);
+	//// AShipCharacter::EmitLaserEffect(Location, Target);
+	//if (World->LineTraceSingleByChannel(OutHit, GetActorLocation(), Target, ECC_Visibility, CollisionParams))
+	//{
+	//	if (OutHit.bBlockingHit)
+	//	{
+	//		AActor * other = OutHit.GetActor();
+	//		// LaserEmitter->SetBeamTargetPoint(0, other->GetActorLocation(), 0);
+	//		End = OutHit.Location;
+	//	}
+	//}
+	//LaserEyeEmitter->SetBeamTargetPoint(0, End, 0);
 }
 
 bool AShipCharacter::FireShot_Validate(FVector FireDirection) { return true; }
@@ -407,11 +437,10 @@ bool AShipCharacter::EmitLaserEffect_Validate(FVector Start, FVector End) { retu
 void AShipCharacter::EmitLaserEffect_Implementation(FVector Start, FVector End)
 {
 	// DrawDebugLine(GetWorld(), Start, End, FColor::Red, true);
-	
+	LaserEmitter->SetBeamTargetPoint(0, End, 0);
 	LaserEmitter->SetVisibility(true);
-	GetWorld()->GetTimerManager().SetTimer(BeamTimer, this, &AShipCharacter::LaserElapse, 0.2f);
-	// static ConstructorHelpers::FObjectFinder<UParticleSystem> Beam(TEXT("ParticleSystem'/Game/InfinityBladeEffects/Effects/FX_Monsters/FX_Monster_Elemental/Fire/P_Beam_Laser_Fire_Large.P_Beam_Laser_Fire_Large'"));
-	// UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Beam.Object, GetActorLocation());
+	GetWorld()->GetTimerManager().SetTimer(BeamTimer, this, &AShipCharacter::LaserElapse, 0.1f);
+	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamShot, End);
 }
 
 void AShipCharacter::LaserElapse()
@@ -425,16 +454,18 @@ void AShipCharacter::EmitLaser_Implementation(FVector Location)
 	UWorld* const World = GetWorld();
 	
 	FHitResult OutHit;
-	FVector Target = (Direction * 100000.f) + Location;
+	FVector Target = (Direction * 100000000.f) + Location;
+	FVector End = Target;
 	FCollisionQueryParams CollisionParams;
 	// DrawDebugLine(World, Location, Target, FColor::Red, true);
-	AShipCharacter::EmitLaserEffect(Location, Target);
+	// AShipCharacter::EmitLaserEffect(Location, Target);
 	if (World->LineTraceSingleByChannel(OutHit, Location, Target, ECC_Visibility, CollisionParams))
 	{
 		if (OutHit.bBlockingHit)
 		{
 			AActor * other = OutHit.GetActor();
-			LaserEmitter->SetBeamTargetPoint(0, other->GetActorLocation(), 0);
+			// LaserEmitter->SetBeamTargetPoint(0, other->GetActorLocation(), 0);
+			End = OutHit.Location;
 			UPrimitiveComponent* DamagedComponent = OutHit.GetComponent();
 			if (DamagedComponent != nullptr)
 			{
@@ -445,11 +476,12 @@ void AShipCharacter::EmitLaser_Implementation(FVector Location)
 			AShipCharacter * otherShip = Cast<AShipCharacter>(other);
 			FString targetName = otherShip == nullptr ? other->GetName() : otherShip->PlayerName;
 			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Green, FString::Printf(TEXT("%s hits %s"), *PlayerName, *targetName));
-			UGameplayStatics::ApplyDamage(OutHit.GetActor(), 20.0f, nullptr, this, UDamageType::StaticClass());
-		} else
-			LaserEmitter->SetBeamTargetPoint(0, Target, 0);
-	} else
-		LaserEmitter->SetBeamTargetPoint(0, Target, 0);
+			if (other != this)
+				UGameplayStatics::ApplyDamage(OutHit.GetActor(), 20.0f, nullptr, this, UDamageType::StaticClass());
+		}
+	}
+
+	AShipCharacter::EmitLaserEffect(Location, End);
 }
 
 void AShipCharacter::FireShotAction(FVector FireDirection)
