@@ -3,7 +3,7 @@
 This project for a research on navtive networking module in Unreal Engines, making a demo for online multiple player games using Unreal Engine 4.
 
 ## Try it out
-MacOS Build [Download](https://github.com/devfans/LandMaster/releases/download/0.0.1/LandMaster.app.zip)
+MacOS Build [Download](https://github.com/devfans/LandMaster/releases/download/0.0.1/LandMaster.app.zip) Video Demo: https://youtu.be/wYc0mkZiGXI
 
 
 <p align="center">
