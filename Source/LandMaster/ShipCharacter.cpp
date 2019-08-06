@@ -57,8 +57,9 @@ AShipCharacter::AShipCharacter()
 	// LaserEmitter->SetBeamTargetPoint(0, GetActorLocation(), 0);
 	LaserEmitter->SetVisibility(false);
 
-	static ConstructorHelpers::FObjectFinder<UParticleSystem> BeamEye(TEXT("ParticleSystem'/Game/InfinityBladeEffects/Effects/FX_Monsters/FX_Monster_Elemental/ICE/P_Beam_Laser_Ice_Large1.P_Beam_Laser_Ice_Large1'"));
-	// UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Beam.Object, GetActorLocation()); 
+	static ConstructorHelpers::FObjectFinder<UParticleSystem> BeamEye(TEXT("ParticleSystem'/Game/InfinityBladeEffects/Effects/FX_Monsters/FX_Monster_Elemental/ICE/P_Beam_Laser_Ice.P_Beam_Laser_Ice'"));
+    
+	// UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Beam.Object, GetActorLocation());
 	LaserEyeEmitter = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("LaserBeamEyeEmitter"));
 	LaserEyeEmitter->SetTemplate(BeamEye.Object);
 	LaserEyeEmitter->SetupAttachment(GetMesh());
