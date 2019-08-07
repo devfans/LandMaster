@@ -1,6 +1,6 @@
 # LandMaster
 
-This project for a research on navtive networking module in Unreal Engines, making a demo for online multiple player games using Unreal Engine 4.
+This project was for a research on native networking module in UE4, making a demo for online multiple player games using it.
 
 ## Try it out
 MacOS Build [Download](https://github.com/devfans/LandMaster/releases/download/0.0.1/LandMaster.app.zip) Video Demo: https://youtu.be/wYc0mkZiGXI
